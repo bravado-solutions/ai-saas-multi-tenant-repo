@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-config
+data:
+  # Production Qdrant cluster address
+  QDRANT_HOST: "qdrant-prod-cluster"
+  LOG_LEVEL: "error"
+  DEBUG: "false"

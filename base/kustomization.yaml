@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: bravado-prod # Centralized namespace control
+
+resources:
+  - deployment.yaml
+  - service.yaml
+  - secrets.yaml
+  - configmap.yaml
+  - ingress.yaml
+  - usage_cron.yaml  # Added
+  - hpa.yaml         # Added
+
+commonLabels:
+  app.kubernetes.io/name: bravado-saas
+  project: bravado-solutions

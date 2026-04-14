@@ -1,0 +1,19 @@
+api:
+  replicaCount: 5
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+
+ingress:
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: api.bravado.io
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: bravado-api-tls
+      hosts:
+        - api.bravado.io

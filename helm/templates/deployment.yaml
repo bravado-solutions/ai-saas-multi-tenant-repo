@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ai-saas.fullname" . }}-api
+spec:
+  replicas: {{ .Values.api.replicaCount }}
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api
+          image: {{ .Values.api.image }}
+          ports:
+            - containerPort: 8000
+          env:
+            - name: QDRANT_HOST
+              value: {{ .Release.Name }}-qdrant
+          # Pull secrets from the environment or K8s secrets
+          envFrom:
+            - secretRef:
+                name: bravado-secrets

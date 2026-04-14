@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bravado-api
+  labels:
+    app: api
+    component: backend
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1        # Spin up one new pod before killing an old one
+      maxUnavailable: 0  # Ensure 100% availability during updates
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      # Termination grace period for graceful shutdown logic in main.py
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: api
+        image: bravadoacr.azurecr.io/api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+        envFrom:
+        - configMapRef:
+            name: api-config
+        - secretRef:
+            name: bravado-secrets
+        # Liveness: Restart if the app deadlocks
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 15
+          timeoutSeconds: 5
+        # Readiness: Don't send traffic until DB/Redis are connected
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+          limits:
+            cpu: "500m"
+            memory: "1Gi"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bravado-worker
+  labels:
+    app: worker
+    component: background-processor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      terminationGracePeriodSeconds: 60 # Workers need more time to finish indexing tasks
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: worker
+        image: bravadoacr.azurecr.io/worker:latest
+        envFrom:
+        - configMapRef:
+            name: api-config
+        - secretRef:
+            name: bravado-secrets
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "512Mi"
+          limits:
+            cpu: "500m"
+            memory: "1Gi"

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-config
+data:
+  QDRANT_HOST: "bravado-qdrant"
+  QDRANT_PORT: "6333"
+  REDIS_HOST: "redis-service"
+  DB_HOST: "db-service"
+  LOG_LEVEL: "info"

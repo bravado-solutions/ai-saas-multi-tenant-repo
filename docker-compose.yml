@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.8.0 # Use specific versions for production
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - bravado-net
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: bravado_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # PERSISTENCE FIX
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - bravado-net
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes # SURVIVABILITY FIX
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - bravado-net
+
+  api:
+    build: 
+      context: .
+      dockerfile: app/api/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/bravado_db
+      - QDRANT_HOST=qdrant
+      - REDIS_HOST=redis
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY} # Added for Sprint 4 logic
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy # Wait for DB to be READY, not just started
+      redis:
+        condition: service_started
+    networks:
+      - bravado-net
+
+  worker:
+    build:
+      context: .
+      dockerfile: app/worker/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/bravado_db
+      - QDRANT_HOST=qdrant
+      - REDIS_HOST=redis
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - redis
+      - qdrant
+    networks:
+      - bravado-net
+
+  frontend:
+    build:
+      context: ./app/frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+    networks:
+      - bravado-net
+
+networks:
+  bravado-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  qdrant_data:
+  redis_data:

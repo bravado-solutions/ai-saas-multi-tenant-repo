@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+  - namespace.yaml
+
+namespace: bravado-dev
+
+patches:
+  - path: configmap.yaml
+  - path: ingress.yaml
+
+# Suffixes help distinguish resources in logs
+nameSuffix: -dev

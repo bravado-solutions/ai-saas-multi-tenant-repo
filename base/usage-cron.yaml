@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: bravado-usage-sync
+spec:
+  schedule: "0 0 * * *" 
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: sync-worker
+            image: bravadoacr.azurecr.io/api:latest
+            command: ["python", "scripts/sync_usage.py"]
+            envFrom:
+            - configMapRef:
+                name: api-config # Fixed name match
+            - secretRef:
+                name: bravado-secrets
+          restartPolicy: OnFailure

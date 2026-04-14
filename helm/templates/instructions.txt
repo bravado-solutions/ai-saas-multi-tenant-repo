@@ -1,0 +1,3 @@
+** run command to deploy the production environment
+
+helm upgrade --install bravado ./helm -f ./helm/values/prod-values.yaml

@@ -1,0 +1,21 @@
+# Default values for all environments
+qdrant:
+  enabled: true
+  storage: 10Gi
+
+api:
+  replicaCount: 2
+  image: bravadoacr.azurecr.io/api:latest
+  service:
+    type: ClusterIP
+    port: 80
+
+worker:
+  replicaCount: 1
+  image: bravadoacr.azurecr.io/worker:latest
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    kubernetes.io/ingress.class: nginx
