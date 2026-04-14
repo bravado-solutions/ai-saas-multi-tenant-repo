@@ -1,28 +1,30 @@
 name: Deploy Bravado SaaS Platform
 
 on:
-  push:
-    branches: [ main ]
-  workflow_dispatch: # Allows manual trigger from GitHub UI
+  workflow_dispatch: # Allows manual trigger from GitHub UI for testing/production
+  
+  # on:
+  #   push:
+  #     branches: [ main ] # Currently disabled to prevent accidental deployment charges
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     
-    # Define environment to use "Production" secrets
+    # Define environment to use "Production" secrets/protection rules
     environment: production
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1. Login to Azure
+      # 1. Login to Azure using Service Principal Secret
       - name: Azure Login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 2. Azure Container Registry Login
+      # 2. Azure Container Registry (ACR) Login
       - name: ACR Login
         run: az acr login --name bravadoacr
 
@@ -46,6 +48,7 @@ jobs:
           cluster-name: 'bravado-aks'
 
       # 6. Install/Upgrade Application via Helm
+      # Note: Secrets are passed from GitHub Secrets to Helm --set flags
       - name: Deploy Core Platform
         run: |
           helm upgrade --install bravado-platform ./charts/bravado-stack \
@@ -57,16 +60,22 @@ jobs:
             --set global.openaiApiKey=${{ secrets.OPENAI_API_KEY }} \
             --values ./charts/bravado-stack/values-prod.yaml
 
-      # 7. Update the Usage Sync CronJob
-      # This ensures the script we built in Sprint 4 is always current
+      # 7. Update the Usage Sync CronJob (Infrastructure Maintenance)
       - name: Update Usage Sync CronJob
         run: |
           kubectl apply -f base/usage-cron.yaml --namespace production
-          # Manually trigger a refresh of the image tag for the CronJob
-          kubectl set image cronjob/bravado-usage-sync sync-worker=bravadoacr.azurecr.io/api:${{ github.sha }} --namespace production
+          kubectl set image cronjob/bravado-usage-sync \
+            sync-worker=bravadoacr.azurecr.io/api:${{ github.sha }} \
+            --namespace production
 
       # 8. Post-Deployment Smoke Test
       - name: Smoke Test
         run: |
-          CLUSTER_IP=$(kubectl get svc api-service -n production -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          echo "Waiting for LoadBalancer to be ready..."
+          sleep 30
+          CLUSTER_IP=$(kubectl get svc api-service -n production -o jsonpath='{.status.loadBalancer.ingress.ip}')
+          if [ -z "$CLUSTER_IP" ]; then
+            echo "LoadBalancer IP not assigned yet. Check AKS portal."
+            exit 1
+          fi
           curl --fail http://$CLUSTER_IP/health || exit 1
