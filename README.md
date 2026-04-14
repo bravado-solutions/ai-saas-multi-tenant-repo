@@ -1,3 +1,7 @@
+![Multi-Tenant](https://img.shields.io/badge/Architecture-Multi--Tenant-blue?style=for-the-badge&logo=target&logoColor=white)
+![RAG](https://img.shields.io/badge/AI-RAG%20Orchestration-green?style=for-the-badge&logo=googlegemini&logoColor=white)
+![Enterprise](https://img.shields.io/badge/Grade-Enterprise--SaaS-gold?style=for-the-badge&logo=enterprise&logoColor=white)
+![Azure](https://img.shields.io/badge/azure-%230072C6.svg?style=for-the-badge&logo=microsoftazure&logoColor=white)
 # 🏗️ Agentic AI SaaS Multi-Tenant Enterprise-grade Platform
 
 ## The 2026 Blueprint for Multi-Tenant Agentic RAG & Event-Driven Workflows for Enterprise
