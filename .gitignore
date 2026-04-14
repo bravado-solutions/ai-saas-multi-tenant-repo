@@ -1,0 +1,32 @@
+# Environment Variables
+.env
+*.env
+example.env # (Optional: keep as template, but ignore actual .env)
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+.pytest_cache/
+
+# Node / React
+node_modules/
+build/
+.pnpm-debug.log*
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+.terraform.lock.hcl
+
+# Docker / Storage
+qdrant_storage/
+postgres_data/
+
+# OS Files
+.DS_Store
+Thumbs.db
